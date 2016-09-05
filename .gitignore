@@ -1,1 +1,13 @@
+.svn/
 /target/
+test-output/
+*.class
+.classpath
+.project
+.settings/
+tmp
+temp
+*.log
+.idea/
+*.iml
+/logs/
