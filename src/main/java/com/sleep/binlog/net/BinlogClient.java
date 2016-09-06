@@ -52,13 +52,18 @@ public class BinlogClient implements Runnable {
 						if (key.isConnectable()) {
 							if (client.isConnectionPending()) {
 								if (client.finishConnect()) {
-									new HandShake(mysqlChannel.readPacket());
+									HandShake handshake = new HandShake(mysqlChannel.readPacket());
+									System.out.println(handshake);
+								} else {
+									System.out.println("finishing connect");
 								}
+							} else {
+								System.out.println("connection pending");
 							}
 						} else if (key.isReadable()) {
-							
+							System.out.println("readable");
 						} else if (key.isWritable()) {
-							
+							System.out.println("writable");
 						}
 					}
 				}

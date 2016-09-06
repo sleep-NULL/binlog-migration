@@ -12,18 +12,41 @@ public abstract class Protocol {
 		this.buf = buf;
 	}
 	
+	/**
+	 * java byte 去符号位转 int
+	 * 
+	 * @param value
+	 * @return
+	 */
 	private int toInt(byte value) {
 		return value & 0xff;
 	}
 	
+	/**
+	 * java byte 去符号位转 long
+	 * 
+	 * @param value
+	 * @return
+	 */
 	private long toLong(byte value) {
 		return (long)toInt(value);
 	}
 	
+	/**
+	 * 读取一个字节
+	 * 
+	 * @return
+	 */
 	public int readByte() {
 		return buf.get();
 	}
 	
+	/**
+	 * 以小头序读取若干字节的 int
+	 * 
+	 * @param length
+	 * @return
+	 */
 	public int readInt(int length) {
 		int result = 0;
 		for (int i = 0; i < length; i++) {
@@ -32,6 +55,11 @@ public abstract class Protocol {
 		return result;
 	}
 	
+	/**
+	 * 读取以 0 为结尾字节的字符串
+	 * 
+	 * @return
+	 */
 	public String readZeroEndString() {
 		List<Byte> bytes = new ArrayList<Byte>();
 		byte temp = 0;
@@ -43,6 +71,31 @@ public abstract class Protocol {
 			result[i] = bytes.get(i);
 		}
 		return new String(result);
+	}
+	
+	/**
+	 * 读取固定长度的字符串
+	 * 
+	 * @param length
+	 * @return
+	 */
+	public String readFixedLengthString(int length) {
+		byte[] arr = new byte[length];
+		for (int i = 0; i < length; i++) {
+			arr[i] = buf.get();
+		}
+		return new String(arr);
+	}
+	
+	/**
+	 * 忽略若干字节
+	 * 
+	 * @param length
+	 */
+	public void ignore(int length) {
+		for (int i = 0; i < length; i++) {
+			buf.get();
+		}
 	}
 
 }
