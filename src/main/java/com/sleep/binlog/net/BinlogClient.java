@@ -54,6 +54,7 @@ public class BinlogClient implements Runnable {
 								if (client.finishConnect()) {
 									HandShake handshake = new HandShake(mysqlChannel.readPacket());
 									System.out.println(handshake);
+									key.interestOps(SelectionKey.OP_WRITE);
 								} else {
 									System.out.println("finishing connect");
 								}
@@ -64,6 +65,7 @@ public class BinlogClient implements Runnable {
 							System.out.println("readable");
 						} else if (key.isWritable()) {
 							System.out.println("writable");
+							
 						}
 					}
 				}

@@ -1,17 +1,21 @@
 package com.sleep.binlog.protocol;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 
+/**
+ * @author yafeng.huang
+ *
+ */
 public abstract class Protocol {
-	
+
 	private ByteBuffer buf;
-	
+
 	public Protocol(ByteBuffer buf) {
 		this.buf = buf;
 	}
-	
+
 	/**
 	 * java byte 去符号位转 int
 	 * 
@@ -21,7 +25,7 @@ public abstract class Protocol {
 	private int toInt(byte value) {
 		return value & 0xff;
 	}
-	
+
 	/**
 	 * java byte 去符号位转 long
 	 * 
@@ -29,9 +33,9 @@ public abstract class Protocol {
 	 * @return
 	 */
 	private long toLong(byte value) {
-		return (long)toInt(value);
+		return (long) toInt(value);
 	}
-	
+
 	/**
 	 * 读取一个字节
 	 * 
@@ -40,7 +44,7 @@ public abstract class Protocol {
 	public int readByte() {
 		return buf.get();
 	}
-	
+
 	/**
 	 * 以小头序读取若干字节的 int
 	 * 
@@ -54,25 +58,29 @@ public abstract class Protocol {
 		}
 		return result;
 	}
-	
+
+	public long readLong(int length) {
+		long result = 0;
+		for (int i = 0; i < length; i++) {
+			result |= (toLong(buf.get()) << (i << 3));
+		}
+		return result;
+	}
+
 	/**
 	 * 读取以 0 为结尾字节的字符串
 	 * 
 	 * @return
 	 */
 	public String readZeroEndString() {
-		List<Byte> bytes = new ArrayList<Byte>();
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		byte temp = 0;
 		while ((temp = buf.get()) != 0) {
-			bytes.add(temp);
+			out.write(temp);
 		}
-		byte[] result = new byte[bytes.size()];
-		for (int i = 0; i < bytes.size(); i++) {
-			result[i] = bytes.get(i);
-		}
-		return new String(result);
+		return new String(out.toByteArray());
 	}
-	
+
 	/**
 	 * 读取固定长度的字符串
 	 * 
@@ -86,7 +94,7 @@ public abstract class Protocol {
 		}
 		return new String(arr);
 	}
-	
+
 	/**
 	 * 忽略若干字节
 	 * 
@@ -96,6 +104,27 @@ public abstract class Protocol {
 		for (int i = 0; i < length; i++) {
 			buf.get();
 		}
+	}
+
+	/**
+	 * <a href="http://dev.mysql.com/doc/internals/en/integer.html">
+	 * 
+	 * @return
+	 * @throws IOException
+	 */
+	public long readLengthEncodedInt() throws IOException {
+		int firstByte = toInt(buf.get());
+		if (firstByte < 0xfb) {
+			return readInt(1);
+		} else if (firstByte == 0xfc) {
+			return readInt(2);
+		} else if (firstByte == 0xfd) {
+			return readInt(3);
+		} else if (firstByte == 0xfe) {
+			return readLong(8);
+		}
+		// 不符合要求的直接抛出异常
+		throw new IOException("Not length encode integer " + firstByte);
 	}
 
 }
