@@ -2,6 +2,7 @@ package com.sleep.binlog.protocol;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
 /**
@@ -125,6 +126,14 @@ public abstract class Protocol {
 		}
 		// 不符合要求的直接抛出异常
 		throw new IOException("Not length encode integer " + firstByte);
+	}
+	
+	public String readEOFString() throws UnsupportedEncodingException {
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		while (buf.hasRemaining()) {
+			out.write(buf.get());
+		}
+		return new String(out.toByteArray(), "UTF-8");
 	}
 
 }

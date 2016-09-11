@@ -1,5 +1,7 @@
 package com.sleep.binlog;
 
+import java.net.UnknownHostException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,9 +12,9 @@ public class BinlogMigration {
 	
 	private static final Logger logger = LoggerFactory.getLogger(BinlogMigration.class);
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws UnknownHostException {
 		logger.info("BinlogMigration start ...");
-		ThreadUtil.newThread(new BinlogClient("localhost", 3306), "BinlogClient");
+		ThreadUtil.newThread(new BinlogClient("10.0.30.152", 3306), "BinlogClient");
 	}
 
 }

@@ -2,14 +2,8 @@ package com.sleep.binlog.protocol;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public abstract class Response {
-	
-	private static final Logger logger = LoggerFactory.getLogger(Response.class);
 	
 	private ByteArrayOutputStream out;
 	
@@ -25,7 +19,7 @@ public abstract class Response {
 	 */
 	public void writeInt(int value, int length) {
 		for (int i = 0; i < length; i++) {
-			out.write(value >>> (i << 3));
+			out.write((value >>> (i << 3)) & 0xff);
 		}
 	}
 	
@@ -35,12 +29,12 @@ public abstract class Response {
 		}
 	}
 	
-	public void writeFixedLengthString(String str) throws UnsupportedEncodingException, IOException {
-		out.write(str.getBytes("UTF-8"));
+	public void writeFixedLengthString(String str) throws IOException {
+		out.write(str.getBytes());
 	}
 	
-	public void writeZeroEndString(String str) throws UnsupportedEncodingException, IOException {
-		out.write(str.getBytes("UTF-8"));
+	public void writeZeroEndString(String str) throws IOException {
+		out.write(str.getBytes());
 		out.write(0);
 	}
 	

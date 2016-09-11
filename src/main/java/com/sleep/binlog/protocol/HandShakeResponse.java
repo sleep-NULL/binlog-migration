@@ -18,6 +18,7 @@ public class HandShakeResponse extends Response {
 		fill(0, 23);
 		writeZeroEndString(username);
 		byte[] pwd = calculatedPassword(password, randomData);
+		System.out.println("password length = " + pwd.length);
 		writeInt(pwd.length, 1);
 		write(pwd);
 	}
@@ -34,6 +35,14 @@ public class HandShakeResponse extends Response {
 		byte[] passwordBytes = password.getBytes();
 		return BitUtil.xor(DigestUtil.sha1(passwordBytes), DigestUtil
 				.sha1(BitUtil.concat(randomData.getBytes(), DigestUtil.sha1(DigestUtil.sha1(passwordBytes)))));
+	}
+	
+	public static void main(String[] args) throws UnsupportedEncodingException, IOException {
+		HandShakeResponse res = new HandShakeResponse(33, "root", "", "");
+		byte[] byteArr = res.calculatedPassword("test", "password");
+		for (int i = 0; i < byteArr.length; i++) {
+			System.out.print(byteArr[i]);
+		}
 	}
 
 }

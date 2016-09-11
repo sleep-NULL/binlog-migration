@@ -75,4 +75,84 @@ public class HandShake extends Protocol {
 				+ ", authPluginDataPart2=" + authPluginDataPart2 + ", authPluginName=" + authPluginName + "]";
 	}
 
+	public int getVersion() {
+		return version;
+	}
+
+	public void setVersion(int version) {
+		this.version = version;
+	}
+
+	public String getServerVersion() {
+		return serverVersion;
+	}
+
+	public void setServerVersion(String serverVersion) {
+		this.serverVersion = serverVersion;
+	}
+
+	public int getConnectId() {
+		return connectId;
+	}
+
+	public void setConnectId(int connectId) {
+		this.connectId = connectId;
+	}
+
+	public String getAuthPluginDataPart1() {
+		return authPluginDataPart1;
+	}
+
+	public void setAuthPluginDataPart1(String authPluginDataPart1) {
+		this.authPluginDataPart1 = authPluginDataPart1;
+	}
+
+	public int getCapabilityFlags() {
+		return capabilityFlags;
+	}
+
+	public void setCapabilityFlags(int capabilityFlags) {
+		this.capabilityFlags = capabilityFlags;
+	}
+
+	public int getCharacterSet() {
+		return characterSet;
+	}
+
+	public void setCharacterSet(int characterSet) {
+		this.characterSet = characterSet;
+	}
+
+	public int getStatusFlags() {
+		return statusFlags;
+	}
+
+	public void setStatusFlags(int statusFlags) {
+		this.statusFlags = statusFlags;
+	}
+
+	public String getReserved() {
+		return reserved;
+	}
+
+	public void setReserved(String reserved) {
+		this.reserved = reserved;
+	}
+
+	public String getAuthPluginDataPart2() {
+		return authPluginDataPart2;
+	}
+
+	public void setAuthPluginDataPart2(String authPluginDataPart2) {
+		this.authPluginDataPart2 = authPluginDataPart2;
+	}
+
+	public String getAuthPluginName() {
+		return authPluginName;
+	}
+
+	public void setAuthPluginName(String authPluginName) {
+		this.authPluginName = authPluginName;
+	}
+
 }

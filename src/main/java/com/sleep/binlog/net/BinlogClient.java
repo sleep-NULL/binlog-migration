@@ -1,6 +1,7 @@
 package com.sleep.binlog.net;
 
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -10,7 +11,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.sleep.binlog.protocol.ErrPacket;
 import com.sleep.binlog.protocol.HandShake;
+import com.sleep.binlog.protocol.HandShakeResponse;
+import com.sleep.binlog.protocol.OkPacket;
+import com.sleep.binlog.protocol.Packet;
 
 public class BinlogClient implements Runnable {
 	
@@ -24,13 +29,16 @@ public class BinlogClient implements Runnable {
 	
 	private AtomicBoolean isRunning = new AtomicBoolean(false);
 	
+	private HandShake handshake;
+	
 	public BinlogClient(String hostname, int port) {
 		try {
 			selector = Selector.open();
 			client = SocketChannel.open();
 			client.configureBlocking(false);
-			client.connect(new InetSocketAddress(hostname, port));
+			client.socket().setKeepAlive(true);
 			client.register(selector, SelectionKey.OP_CONNECT);
+			client.connect(new InetSocketAddress(hostname, port));
 			this.mysqlChannel = new MysqlChannel(client);
 		} catch (Exception e) {
 			logger.error("Init BinlogClient occured error.");
@@ -52,7 +60,7 @@ public class BinlogClient implements Runnable {
 						if (key.isConnectable()) {
 							if (client.isConnectionPending()) {
 								if (client.finishConnect()) {
-									HandShake handshake = new HandShake(mysqlChannel.readPacket());
+									handshake = new HandShake(mysqlChannel.readPacket());
 									System.out.println(handshake);
 									key.interestOps(SelectionKey.OP_WRITE);
 								} else {
@@ -62,15 +70,25 @@ public class BinlogClient implements Runnable {
 								System.out.println("connection pending");
 							}
 						} else if (key.isReadable()) {
-							System.out.println("readable");
+							ByteBuffer packet = mysqlChannel.readPacket();
+							switch (packet.get() & 0xff) {
+							case Packet.OK_HEADER:
+								System.out.println(new OkPacket(packet));
+								break;
+							case Packet.ERR_HEADER:
+								System.out.println(new ErrPacket(packet));
+								break;
+							}
 						} else if (key.isWritable()) {
-							System.out.println("writable");
-							
+							HandShakeResponse res = new HandShakeResponse(handshake.getCharacterSet(), "canal", "123456", handshake.getAuthPluginDataPart1() + handshake.getAuthPluginDataPart2());
+							mysqlChannel.sendPachet(res, 1);
+							key.interestOps(SelectionKey.OP_READ);
 						}
 					}
 				}
 			} catch (Exception e) {
 				logger.error("", e);
+				return;
 			}
 		}
 	}
