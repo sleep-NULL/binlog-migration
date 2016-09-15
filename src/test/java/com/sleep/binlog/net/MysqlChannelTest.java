@@ -32,5 +32,10 @@ public class MysqlChannelTest {
 		in.read();
 	}
 	
+	
+	@Test
+	public void fe() {
+		System.out.println("char = " + (char)0xfe);
+	}
 
 }

@@ -1,5 +1,7 @@
 package com.sleep.binlog.net;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -11,6 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.sleep.binlog.protocol.ComQuery;
 import com.sleep.binlog.protocol.ErrPacket;
 import com.sleep.binlog.protocol.HandShake;
 import com.sleep.binlog.protocol.HandShakeResponse;
@@ -28,8 +31,6 @@ public class BinlogClient implements Runnable {
 	private MysqlChannel mysqlChannel;
 	
 	private AtomicBoolean isRunning = new AtomicBoolean(false);
-	
-	private HandShake handshake;
 	
 	private String username;
 	
@@ -66,29 +67,17 @@ public class BinlogClient implements Runnable {
 						if (key.isConnectable()) {
 							if (client.isConnectionPending()) {
 								if (client.finishConnect()) {
-									handshake = new HandShake(mysqlChannel.readPacket());
-									System.out.println(handshake);
-									key.interestOps(SelectionKey.OP_WRITE);
-								} else {
-									System.out.println("finishing connect");
+									HandShake handshake = new HandShake(mysqlChannel.readPacket());
+									logger.info(handshake.toString());
+									HandShakeResponse res = new HandShakeResponse(handshake.getCharacterSet(), username, password, handshake.getAuthPluginDataPart1() + handshake.getAuthPluginDataPart2());
+									mysqlChannel.sendPachet(res, 1);
+									key.interestOps(SelectionKey.OP_READ);
 								}
-							} else {
-								System.out.println("connection pending");
 							}
 						} else if (key.isReadable()) {
-							ByteBuffer packet = mysqlChannel.readPacket();
-							switch (packet.get() & 0xff) {
-							case Packet.OK_HEADER:
-								System.out.println(new OkPacket(packet));
-								break;
-							case Packet.ERR_HEADER:
-								System.out.println(new ErrPacket(packet));
-								break;
-							}
+							readGenericPacket();
+							mysqlChannel.sendPachet(new ComQuery("set @master_binlog_checksum='NONE'"), 0);
 						} else if (key.isWritable()) {
-							HandShakeResponse res = new HandShakeResponse(handshake.getCharacterSet(), username, password, handshake.getAuthPluginDataPart1() + handshake.getAuthPluginDataPart2());
-							mysqlChannel.sendPachet(res, 1);
-							key.interestOps(SelectionKey.OP_READ);
 						}
 					}
 				}
@@ -96,6 +85,19 @@ public class BinlogClient implements Runnable {
 				logger.error("", e);
 				return;
 			}
+		}
+	}
+
+	private void readGenericPacket() throws IOException, UnsupportedEncodingException {
+		ByteBuffer packet = mysqlChannel.readPacket();
+		switch (packet.get() & 0xff) {
+		case Packet.OK_HEADER:
+			logger.info(new OkPacket(packet).toString());
+			break;
+		case Packet.ERR_HEADER:
+			ErrPacket errPacket = new ErrPacket(packet);
+			logger.error(errPacket.toString());
+			throw new NetworkException("Connect to mysql server failed.");
 		}
 	}
 	

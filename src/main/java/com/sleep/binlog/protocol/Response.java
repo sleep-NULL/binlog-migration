@@ -29,7 +29,7 @@ public abstract class Response {
 		}
 	}
 	
-	public void writeFixedLengthString(String str) throws IOException {
+	public void writeString(String str) throws IOException {
 		out.write(str.getBytes());
 	}
 	
