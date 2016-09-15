@@ -102,7 +102,7 @@ public class MysqlChannel implements Channel {
 	 */
 	public void writeInt(int value, int length, ByteBuffer buf) {
 		for (int i = 0; i < length; i++) {
-			buf.put((byte) ((value >>> (i << 3)) & 0xff));
+			buf.put((byte) ((value >>> (i << 3)) & 0x000000ff));
 		}
 	}
 

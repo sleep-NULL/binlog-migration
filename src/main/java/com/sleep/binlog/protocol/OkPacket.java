@@ -26,8 +26,8 @@ public class OkPacket extends Protocol {
 		this.affectedRows = readLengthEncodedInt();
 		this.lastInsertId = readLengthEncodedInt();
 		this.statusFlags = readInt(2);
-		this.warnings = readInt(2);
-		this.info = readEOFString();
+//		this.warnings = readInt(2);
+//		this.info = readEOFString();
 	}
 
 	public long getAffectedRows() {

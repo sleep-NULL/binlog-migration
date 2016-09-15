@@ -59,7 +59,10 @@ public class HandShake extends Protocol {
 			reserved = readFixedLengthString(10);
 			if ((capabilityFlags
 					& CapabilityFlag.CLIENT_SECURE_CONNECTION) == CapabilityFlag.CLIENT_SECURE_CONNECTION) {
-				authPluginDataPart2 = readFixedLengthString(Math.max(13, authPluginDataLength - 8));
+				// authPluginDataPart2 = readFixedLengthString(Math.max(13,
+				// authPluginDataLength - 8));
+				// 此处与文档描述不符合
+				authPluginDataPart2 = readZeroEndString();
 			}
 			if ((capabilityFlags & CapabilityFlag.CLIENT_PLUGIN_AUTH) == CapabilityFlag.CLIENT_PLUGIN_AUTH) {
 				authPluginName = readZeroEndString();

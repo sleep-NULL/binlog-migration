@@ -19,7 +19,7 @@ public abstract class Response {
 	 */
 	public void writeInt(int value, int length) {
 		for (int i = 0; i < length; i++) {
-			out.write((value >>> (i << 3)) & 0xff);
+			out.write((value >>> (i << 3)) & 0x000000ff);
 		}
 	}
 	

@@ -31,7 +31,11 @@ public class BinlogClient implements Runnable {
 	
 	private HandShake handshake;
 	
-	public BinlogClient(String hostname, int port) {
+	private String username;
+	
+	private String password;
+	
+	public BinlogClient(String hostname, int port, String username, String password) {
 		try {
 			selector = Selector.open();
 			client = SocketChannel.open();
@@ -40,6 +44,8 @@ public class BinlogClient implements Runnable {
 			client.register(selector, SelectionKey.OP_CONNECT);
 			client.connect(new InetSocketAddress(hostname, port));
 			this.mysqlChannel = new MysqlChannel(client);
+			this.username = username;
+			this.password = password;
 		} catch (Exception e) {
 			logger.error("Init BinlogClient occured error.");
 			throw new NetworkException("Init BinlogClient occured error.", e);
@@ -80,7 +86,7 @@ public class BinlogClient implements Runnable {
 								break;
 							}
 						} else if (key.isWritable()) {
-							HandShakeResponse res = new HandShakeResponse(handshake.getCharacterSet(), "canal", "123456", handshake.getAuthPluginDataPart1() + handshake.getAuthPluginDataPart2());
+							HandShakeResponse res = new HandShakeResponse(handshake.getCharacterSet(), username, password, handshake.getAuthPluginDataPart1() + handshake.getAuthPluginDataPart2());
 							mysqlChannel.sendPachet(res, 1);
 							key.interestOps(SelectionKey.OP_READ);
 						}

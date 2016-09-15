@@ -18,7 +18,6 @@ public class HandShakeResponse extends Response {
 		fill(0, 23);
 		writeZeroEndString(username);
 		byte[] pwd = calculatedPassword(password, randomData);
-		System.out.println("password length = " + pwd.length);
 		writeInt(pwd.length, 1);
 		write(pwd);
 	}
