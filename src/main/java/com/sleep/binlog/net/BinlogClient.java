@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.sleep.binlog.protocol.BinlogEventHeader;
 import com.sleep.binlog.protocol.ComBinlogDump;
 import com.sleep.binlog.protocol.ComQuery;
 import com.sleep.binlog.protocol.ErrPacket;
@@ -96,7 +97,7 @@ public class BinlogClient implements Runnable {
 		ByteBuffer packet = mysqlChannel.readPacket();
 		switch (packet.get() & 0xff) {
 		case Packet.OK_HEADER:
-			System.out.println("binlog event");
+			logger.info(new BinlogEventHeader(packet).toString());
 			break;
 		case Packet.ERR_HEADER:
 			ErrPacket errPacket = new ErrPacket(packet);
