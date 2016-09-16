@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.sleep.binlog.protocol.ComBinlogDump;
 import com.sleep.binlog.protocol.ComQuery;
 import com.sleep.binlog.protocol.ErrPacket;
 import com.sleep.binlog.protocol.HandShake;
@@ -21,28 +22,29 @@ import com.sleep.binlog.protocol.OkPacket;
 import com.sleep.binlog.protocol.Packet;
 
 public class BinlogClient implements Runnable {
-	
-	private static final Logger logger  = LoggerFactory.getLogger(BinlogClient.class);
-	
-	private Selector selector;
-	
+
+	private static final Logger logger = LoggerFactory.getLogger(BinlogClient.class);
+
+	// private Selector selector;
+
 	private SocketChannel client;
-	
+
 	private MysqlChannel mysqlChannel;
-	
+
 	private AtomicBoolean isRunning = new AtomicBoolean(false);
-	
+
 	private String username;
-	
+
 	private String password;
-	
+
 	public BinlogClient(String hostname, int port, String username, String password) {
 		try {
-			selector = Selector.open();
+			// selector = Selector.open();
 			client = SocketChannel.open();
-			client.configureBlocking(false);
+			// client.configureBlocking(false);
 			client.socket().setKeepAlive(true);
-			client.register(selector, SelectionKey.OP_CONNECT);
+			client.socket().setSoTimeout(1000 * 60);
+			// client.register(selector, SelectionKey.OP_CONNECT);
 			client.connect(new InetSocketAddress(hostname, port));
 			this.mysqlChannel = new MysqlChannel(client);
 			this.username = username;
@@ -56,36 +58,28 @@ public class BinlogClient implements Runnable {
 	@Override
 	public void run() {
 		isRunning.set(true);
-		while (isRunning.get()) {
-			try {
-				int readyNum = selector.select(300L);
-				if (readyNum != 0) {
-					Iterator<SelectionKey> it = selector.selectedKeys().iterator();
-					while (it.hasNext()) {
-						SelectionKey key = it.next();
-						it.remove();
-						if (key.isConnectable()) {
-							if (client.isConnectionPending()) {
-								if (client.finishConnect()) {
-									HandShake handshake = new HandShake(mysqlChannel.readPacket());
-									logger.info(handshake.toString());
-									HandShakeResponse res = new HandShakeResponse(handshake.getCharacterSet(), username, password, handshake.getAuthPluginDataPart1() + handshake.getAuthPluginDataPart2());
-									mysqlChannel.sendPachet(res, 1);
-									key.interestOps(SelectionKey.OP_READ);
-								}
-							}
-						} else if (key.isReadable()) {
-							readGenericPacket();
-							mysqlChannel.sendPachet(new ComQuery("set @master_binlog_checksum='NONE'"), 0);
-						} else if (key.isWritable()) {
-						}
-					}
-				}
-			} catch (Exception e) {
-				logger.error("", e);
-				return;
+		try {
+			authorize();
+			mysqlChannel.sendPachet(new ComQuery("set @master_binlog_checksum='NONE'"), 0);
+			readGenericPacket();
+			mysqlChannel.sendPachet(new ComBinlogDump(865, 0, 2, "mysql-bin.000005"), 0);
+			int i = 0;
+			while (isRunning.get()) {
+				System.out.println(i++);
+				readBinlogEvent();
 			}
+		} catch (Exception e) {
+			logger.error("", e);
 		}
+	}
+
+	private void authorize() throws IOException, UnsupportedEncodingException {
+		HandShake handshake = new HandShake(mysqlChannel.readPacket());
+		logger.info(handshake.toString());
+		HandShakeResponse res = new HandShakeResponse(handshake.getCharacterSet(), username, password,
+				handshake.getAuthPluginDataPart1() + handshake.getAuthPluginDataPart2());
+		mysqlChannel.sendPachet(res, 1);
+		readGenericPacket();
 	}
 
 	private void readGenericPacket() throws IOException, UnsupportedEncodingException {
@@ -100,5 +94,17 @@ public class BinlogClient implements Runnable {
 			throw new NetworkException("Connect to mysql server failed.");
 		}
 	}
-	
+
+	private void readBinlogEvent() throws IOException {
+		ByteBuffer packet = mysqlChannel.readPacket();
+		switch (packet.get() & 0xff) {
+		case Packet.OK_HEADER:
+			System.out.println("binlog event");
+			break;
+		case Packet.ERR_HEADER:
+			ErrPacket errPacket = new ErrPacket(packet);
+			logger.error(errPacket.toString());
+		}
+	}
+
 }
