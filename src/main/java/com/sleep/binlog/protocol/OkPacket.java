@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
- * <a href="http://dev.mysql.com/doc/internals/en/packet-OK_Packet.html">
- * 
  * @author yafeng.huang
+ * 
+ * <a href="http://dev.mysql.com/doc/internals/en/packet-OK_Packet.html">
  *
  */
 public class OkPacket extends Protocol {

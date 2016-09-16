@@ -4,10 +4,10 @@ import java.nio.ByteBuffer;
 
 /**
  * 
- * <a href=
- * "http://dev.mysql.com/doc/internals/en/connection-phase-packets.html#packet-Protocol::Handshake">
- * 
  * @author yafeng.huang
+ * 
+ *         <a href=
+ *         "http://dev.mysql.com/doc/internals/en/connection-phase-packets.html#packet-Protocol::Handshake">
  *
  */
 public class HandShake extends Protocol {
