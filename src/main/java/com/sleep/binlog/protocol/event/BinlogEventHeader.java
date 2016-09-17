@@ -1,6 +1,8 @@
-package com.sleep.binlog.protocol;
+package com.sleep.binlog.protocol.event;
 
 import java.nio.ByteBuffer;
+
+import com.sleep.binlog.protocol.Protocol;
 
 /**
  * @author huangyafeng
@@ -10,6 +12,8 @@ import java.nio.ByteBuffer;
  *
  */
 public class BinlogEventHeader extends Protocol {
+	
+	public static final int HEADER_LENGTH = 19;
 
 	private long timestamp;
 

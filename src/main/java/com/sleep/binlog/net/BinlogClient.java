@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.sleep.binlog.protocol.BinlogEventHeader;
 import com.sleep.binlog.protocol.ComBinlogDump;
 import com.sleep.binlog.protocol.ComQuery;
 import com.sleep.binlog.protocol.ErrPacket;
@@ -18,6 +17,10 @@ import com.sleep.binlog.protocol.HandShake;
 import com.sleep.binlog.protocol.HandShakeResponse;
 import com.sleep.binlog.protocol.OkPacket;
 import com.sleep.binlog.protocol.Packet;
+import com.sleep.binlog.protocol.event.BinlogEventHeader;
+import com.sleep.binlog.protocol.event.EVENT_TYPE;
+import com.sleep.binlog.protocol.event.RotateEvent;
+import com.sleep.binlog.protocol.event.TableMapEvent;
 
 public class BinlogClient implements Runnable {
 
@@ -60,7 +63,7 @@ public class BinlogClient implements Runnable {
 			authorize();
 			mysqlChannel.sendPachet(new ComQuery("set @master_binlog_checksum='NONE'"), 0);
 			readGenericPacket();
-			mysqlChannel.sendPachet(new ComBinlogDump(865, 0, 2, "mysql-bin.000005"), 0);
+			mysqlChannel.sendPachet(new ComBinlogDump(4, 0, 2, "mysql-bin.000001"), 0);
 			int i = 0;
 			while (isRunning.get()) {
 				System.out.println(i++);
@@ -97,11 +100,24 @@ public class BinlogClient implements Runnable {
 		ByteBuffer packet = mysqlChannel.readPacket();
 		switch (packet.get() & 0xff) {
 		case Packet.OK_HEADER:
-			logger.info(new BinlogEventHeader(packet).toString());
+			BinlogEventHeader header = new BinlogEventHeader(packet);
+			logger.info(header.toString());
+			switch (EVENT_TYPE.valueOf(header.getEventType())) {
+			case ROTATE_EVENT:
+				RotateEvent rotateEvent = new RotateEvent(packet);
+				logger.info(rotateEvent.toString());
+				break;
+			case TABLE_MAP_EVENT:
+				TableMapEvent tableMapEvent = new TableMapEvent(packet);
+				logger.info(tableMapEvent.toString());
+				break;
+			}
+			
 			break;
 		case Packet.ERR_HEADER:
 			ErrPacket errPacket = new ErrPacket(packet);
 			logger.error(errPacket.toString());
+			break;
 		}
 	}
 
