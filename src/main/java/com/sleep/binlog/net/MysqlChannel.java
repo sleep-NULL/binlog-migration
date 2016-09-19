@@ -42,7 +42,9 @@ public class MysqlChannel implements Channel {
 		socketChannel.read(seq);
 		seq.rewind();
 		ByteBuffer payload = ByteBuffer.allocate(payloadLength);
-		socketChannel.read(payload);
+		while (payload.hasRemaining()) {
+			socketChannel.read(payload);
+		}
 		payload.flip();
 		return payload;
 	}

@@ -115,7 +115,7 @@ public abstract class Protocol {
 	public long readLengthEncodedInt() throws IOException {
 		int firstByte = toInt(buf.get());
 		if (firstByte < 0xfb) {
-			return readInt(1);
+			return firstByte;
 		} else if (firstByte == 0xfc) {
 			return readInt(2);
 		} else if (firstByte == 0xfd) {
