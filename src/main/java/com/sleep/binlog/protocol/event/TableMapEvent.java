@@ -39,42 +39,36 @@ public class TableMapEvent extends Protocol {
 		readInt(1);
 		this.table = readZeroEndString();
 		this.columnCount = readLengthEncodedInt();
-		columnTypeDef = new int[(int) columnCount];
-		for (int i = 0; i < columnCount; i++) {
-			columnTypeDef[i] = readInt(1);
-		}
+		this.columnTypeDef = read((int) columnCount);
 		readLengthEncodedInt();
 		columnMetaDef = new int[(int) columnCount];
+		// https://github.com/mysql/mysql-server/blob/e0e0ae2ea27c9bb76577664845507ef224d362e4/sql/field.cc do_save_field_metadata
 		for (int i = 0; i < columnCount; i++) {
 			switch (columnTypeDef[i]) {
-			case ColumnType.MYSQL_TYPE_STRING:
-			case ColumnType.MYSQL_TYPE_VAR_STRING:
 			case ColumnType.MYSQL_TYPE_VARCHAR:
-			case ColumnType.MYSQL_TYPE_DECIMAL:
 			case ColumnType.MYSQL_TYPE_NEWDECIMAL:
-			case ColumnType.MYSQL_TYPE_ENUM:
-			case ColumnType.MYSQL_TYPE_SET:
+			case ColumnType.MYSQL_TYPE_BIT:
 				columnMetaDef[i] = readInt(2);
 				break;
 			case ColumnType.MYSQL_TYPE_BLOB:
 			case ColumnType.MYSQL_TYPE_DOUBLE:
 			case ColumnType.MYSQL_TYPE_FLOAT:
+			case ColumnType.MYSQL_TYPE_GEOMETRY:
+			case ColumnType.MYSQL_TYPE_TIME2:
+			case ColumnType.MYSQL_TYPE_DATETIME2:
+			case ColumnType.MYSQL_TYPE_TIMESTAMP2:
 				columnMetaDef[i] = readInt(1);
+				break;
+			case ColumnType.MYSQL_TYPE_SET:
+			case ColumnType.MYSQL_TYPE_ENUM:
+			case ColumnType.MYSQL_TYPE_STRING:
+				columnMetaDef[i] = readBigedianInt(2);
 				break;
 			default:
 				columnMetaDef[i] = 0;
 			}
 		}
-		int nullBitmapLength = (int) ((columnCount + 7) >> 3);
-		int[] temp = new int[nullBitmapLength];
-		for (int i = 0; i < nullBitmapLength; i++) {
-			temp[i] = readInt(1);
-		}
-		nullBitmap = new int[(int) columnCount];
-		for (int i = 0; i < columnCount; i++) {
-			nullBitmap[i] = ((temp[i >> 3] & (1 << (i % 8))) == 0) ? 0 : 1;
-		}
-
+		this.nullBitmap = readBigedianBitmap((int)columnCount);
 	}
 
 	public long getTableId() {

@@ -5,6 +5,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
@@ -21,6 +23,7 @@ import com.sleep.binlog.protocol.event.BinlogEventHeader;
 import com.sleep.binlog.protocol.event.EVENT_TYPE;
 import com.sleep.binlog.protocol.event.RotateEvent;
 import com.sleep.binlog.protocol.event.TableMapEvent;
+import com.sleep.binlog.protocol.event.WriteRowsEvent;
 
 public class BinlogClient implements Runnable {
 
@@ -37,6 +40,8 @@ public class BinlogClient implements Runnable {
 	private String username;
 
 	private String password;
+	
+	private Map<Long, TableMapEvent> tableMap;
 
 	public BinlogClient(String hostname, int port, String username, String password) {
 		try {
@@ -50,6 +55,7 @@ public class BinlogClient implements Runnable {
 			this.mysqlChannel = new MysqlChannel(client);
 			this.username = username;
 			this.password = password;
+			this.tableMap = new HashMap<Long, TableMapEvent>();
 		} catch (Exception e) {
 			logger.error("Init BinlogClient occured error.");
 			throw new NetworkException("Init BinlogClient occured error.", e);
@@ -63,7 +69,7 @@ public class BinlogClient implements Runnable {
 			authorize();
 			mysqlChannel.sendPachet(new ComQuery("set @master_binlog_checksum='NONE'"), 0);
 			readGenericPacket();
-			mysqlChannel.sendPachet(new ComBinlogDump(4, 0, 2, "mysql-bin.000001"), 0);
+			mysqlChannel.sendPachet(new ComBinlogDump(4, 0, 2, "mysql-bin.000035"), 0);
 			int i = 0;
 			while (isRunning.get()) {
 				System.out.println(i++);
@@ -109,10 +115,14 @@ public class BinlogClient implements Runnable {
 				break;
 			case TABLE_MAP_EVENT:
 				TableMapEvent tableMapEvent = new TableMapEvent(packet);
+				tableMap.put(tableMapEvent.getTableId(), tableMapEvent);
 				logger.info(tableMapEvent.toString());
 				break;
+			case WRITE_ROWS_EVENTv2:
+				WriteRowsEvent writeRowsEvent = new WriteRowsEvent(packet, tableMap);
+				logger.info(writeRowsEvent.toString());
+				break;
 			}
-			
 			break;
 		case Packet.ERR_HEADER:
 			ErrPacket errPacket = new ErrPacket(packet);

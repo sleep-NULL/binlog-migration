@@ -15,6 +15,10 @@ public abstract class Protocol {
 	public Protocol(ByteBuffer buf) {
 		this.buf = buf;
 	}
+	
+	public int remaining() {
+		return buf.remaining();
+	}
 
 	/**
 	 * java byte 去符号位转 int
@@ -36,15 +40,22 @@ public abstract class Protocol {
 		return (long) toInt(value);
 	}
 
-	/**
-	 * 读取一个字节
-	 * 
-	 * @return
-	 */
-	public int readByte() {
-		return buf.get();
+	public int[] read(int length) {
+		int[] result = new int[length];
+		for (int i = 0; i < length; i++) {
+			result[i] = toInt(buf.get());
+		}
+		return result;
 	}
-
+	
+	public byte[] readByte(int length) {
+		byte[] result = new byte[length];
+		for (int i = 0; i < length; i++) {
+			result[i] = buf.get();
+		}
+		return result;
+	}
+	
 	/**
 	 * 以小头序读取若干字节的 int
 	 * 
@@ -54,6 +65,14 @@ public abstract class Protocol {
 	public int readInt(int length) {
 		int result = 0;
 		for (int i = 0; i < length; i++) {
+			result |= (toInt(buf.get()) << (i << 3));
+		}
+		return result;
+	}
+	
+	public int readBigedianInt(int length) {
+		int result = 0;
+		for (int i = length - 1; i >= 0; i--) {
 			result |= (toInt(buf.get()) << (i << 3));
 		}
 		return result;
@@ -88,6 +107,9 @@ public abstract class Protocol {
 	 * @return
 	 */
 	public String readFixedLengthString(int length) {
+		if (length == 0) {
+			return null;
+		}
 		byte[] arr = new byte[length];
 		for (int i = 0; i < length; i++) {
 			arr[i] = buf.get();
@@ -112,14 +134,16 @@ public abstract class Protocol {
 	 * @return
 	 * @throws IOException
 	 */
-	public long readLengthEncodedInt() throws IOException {
+	public Long readLengthEncodedInt() throws IOException {
 		int firstByte = toInt(buf.get());
 		if (firstByte < 0xfb) {
-			return firstByte;
+			return (long) firstByte;
+		} else if (firstByte == 0xfb) {
+			return null;
 		} else if (firstByte == 0xfc) {
-			return readInt(2);
+			return (long) readInt(2);
 		} else if (firstByte == 0xfd) {
-			return readInt(3);
+			return (long) readInt(3);
 		} else if (firstByte == 0xfe) {
 			return readLong(8);
 		}
@@ -134,5 +158,30 @@ public abstract class Protocol {
 		}
 		return new String(out.toByteArray());
 	}
-
+	
+	public int[] readBitmap(int count) {
+		int bitmapLength = (count + 7) >> 3;
+		int[] temp = read(bitmapLength);
+		for (int i = 0, len = temp.length >> 1; i < len; i++) {
+			int t = temp[i];
+			temp[i] = temp[temp.length - i - 1];
+			temp[temp.length - i - 1] = t;
+		}
+		int[] bitmap = new int[count];
+		for (int i = 0; i < count; i++) {
+			bitmap[i] = ((temp[i >> 3] & (1 << (i % 8))) == 0) ? 0 : 1;
+		}
+		return bitmap;
+	}
+	
+	
+	public int[] readBigedianBitmap(int count) {
+		int bitmapLength = (count + 7) >> 3;
+		int[] temp = read(bitmapLength);
+		int[] bitmap = new int[count];
+		for (int i = 0; i < count; i++) {
+			bitmap[i] = ((temp[i >> 3] & (1 << (i % 8))) == 0) ? 0 : 1;
+		}
+		return bitmap;
+	}
 }
