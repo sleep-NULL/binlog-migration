@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -36,7 +37,10 @@ public class DeleteRowsEvent extends RowsEvent {
 				numOneBitmap++;
 			}
 		}
-		deserializeRow(tableMap.get(tableId), bitmap, numOneBitmap);
+		this.rows = new LinkedList<Serializable[]>();
+		while (remaining() > 4) {
+			rows.add(deserializeRow(tableMap.get(tableId), bitmap, numOneBitmap));
+		}
 	}
 
 	public long getTableId() {

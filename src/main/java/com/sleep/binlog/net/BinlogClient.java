@@ -20,9 +20,11 @@ import com.sleep.binlog.protocol.HandShakeResponse;
 import com.sleep.binlog.protocol.OkPacket;
 import com.sleep.binlog.protocol.Packet;
 import com.sleep.binlog.protocol.event.BinlogEventHeader;
+import com.sleep.binlog.protocol.event.DeleteRowsEvent;
 import com.sleep.binlog.protocol.event.EVENT_TYPE;
 import com.sleep.binlog.protocol.event.RotateEvent;
 import com.sleep.binlog.protocol.event.TableMapEvent;
+import com.sleep.binlog.protocol.event.UpdateRowsEvent;
 import com.sleep.binlog.protocol.event.WriteRowsEvent;
 
 public class BinlogClient implements Runnable {
@@ -69,7 +71,7 @@ public class BinlogClient implements Runnable {
 			authorize();
 			mysqlChannel.sendPachet(new ComQuery("set @master_binlog_checksum='NONE'"), 0);
 			readGenericPacket();
-			mysqlChannel.sendPachet(new ComBinlogDump(4, 0, 2, "mysql-bin.000035"), 0);
+			mysqlChannel.sendPachet(new ComBinlogDump(4, 0, 2, "mysql-bin.000001"), 0);
 			int i = 0;
 			while (isRunning.get()) {
 				System.out.println(i++);
@@ -122,6 +124,16 @@ public class BinlogClient implements Runnable {
 				WriteRowsEvent writeRowsEvent = new WriteRowsEvent(packet, tableMap);
 				logger.info(writeRowsEvent.toString());
 				break;
+			case DELETE_ROWS_EVENTv2:
+				DeleteRowsEvent deleteRowsEvent = new DeleteRowsEvent(packet, tableMap);
+				logger.info(deleteRowsEvent.toString());
+				break;
+			case UPDATE_ROWS_EVENTv2:
+				UpdateRowsEvent updateRowsEvent = new UpdateRowsEvent(packet, tableMap);
+				logger.info(updateRowsEvent.toString());
+				break;
+			default :
+				logger.info("Ignore event.");
 			}
 			break;
 		case Packet.ERR_HEADER:

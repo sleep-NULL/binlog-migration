@@ -20,8 +20,6 @@ public abstract class RowsEvent extends Protocol{
 	}
 
 	public Serializable getFieldValue(int type, int meta, int length) {
-		System.out.println("type === " + type);
-		System.out.println(remaining());
 		switch (type) {
 		case ColumnType.MYSQL_TYPE_BIT:
 	        int bitSetLength = (meta >> 8) * 8 + (meta & 0xFF);
@@ -51,7 +49,6 @@ public abstract class RowsEvent extends Protocol{
 	                extractBits(datetime, 34, 6, 40),
 	                getFractionalSeconds(meta)
 	        );
-//		case ColumnType.MYSQL_TYPE_DECIMAL:
 		case ColumnType.MYSQL_TYPE_DOUBLE:
 			return Double.longBitsToDouble(readLong(8));
 		case ColumnType.MYSQL_TYPE_ENUM:
@@ -75,7 +72,6 @@ public abstract class RowsEvent extends Protocol{
 	        int decimalLength = (ipd << 2) + DIG_TO_BYTES[x - ipd * DIG_PER_DEC] +
 	            (fpd << 2) + DIG_TO_BYTES[scale - fpd * DIG_PER_DEC];
 	        return asBigDecimal(precision, scale, read(decimalLength));
-//		case ColumnType.MYSQL_TYPE_NULL:
 		case ColumnType.MYSQL_TYPE_SET:
 	        return readLong(length);
 		case ColumnType.MYSQL_TYPE_SHORT:
