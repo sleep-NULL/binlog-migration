@@ -42,7 +42,8 @@ public class TableMapEvent extends Protocol {
 		this.columnTypeDef = read((int) columnCount);
 		readLengthEncodedInt();
 		columnMetaDef = new int[(int) columnCount];
-		// https://github.com/mysql/mysql-server/blob/e0e0ae2ea27c9bb76577664845507ef224d362e4/sql/field.cc do_save_field_metadata
+		// https://github.com/mysql/mysql-server/blob/e0e0ae2ea27c9bb76577664845507ef224d362e4/sql/field.cc
+		// do_save_field_metadata
 		for (int i = 0; i < columnCount; i++) {
 			switch (columnTypeDef[i]) {
 			case ColumnType.MYSQL_TYPE_VARCHAR:
@@ -68,7 +69,7 @@ public class TableMapEvent extends Protocol {
 				columnMetaDef[i] = 0;
 			}
 		}
-		this.nullBitmap = readBigedianBitmap((int)columnCount);
+		this.nullBitmap = readBigedianBitmap((int) columnCount);
 	}
 
 	public long getTableId() {

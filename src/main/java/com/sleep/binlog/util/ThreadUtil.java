@@ -10,9 +10,9 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class ThreadUtil {
-	
+
 	private static final Logger logger = LoggerFactory.getLogger(ThreadUtil.class);
-	
+
 	public static void newThread(Runnable runnuable, String threadName) {
 		Thread t = new Thread(runnuable, threadName);
 		t.setUncaughtExceptionHandler(new UncaughtExceptionHandler() {

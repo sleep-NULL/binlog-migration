@@ -12,7 +12,7 @@ import com.sleep.binlog.protocol.Protocol;
  *
  */
 public class BinlogEventHeader extends Protocol {
-	
+
 	public static final int HEADER_LENGTH = 19;
 
 	private long timestamp;
@@ -90,6 +90,5 @@ public class BinlogEventHeader extends Protocol {
 		return "BinlogEventHeader [timestamp=" + timestamp + ", eventType=" + eventType + ", serverId=" + serverId
 				+ ", eventSize=" + eventSize + ", logPos=" + logPos + ", flags=" + flags + "]";
 	}
-	
-}
 
+}

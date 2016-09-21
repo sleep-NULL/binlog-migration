@@ -15,7 +15,7 @@ public abstract class Protocol {
 	public Protocol(ByteBuffer buf) {
 		this.buf = buf;
 	}
-	
+
 	public int remaining() {
 		return buf.remaining();
 	}
@@ -47,7 +47,7 @@ public abstract class Protocol {
 		}
 		return result;
 	}
-	
+
 	public byte[] readByte(int length) {
 		byte[] result = new byte[length];
 		for (int i = 0; i < length; i++) {
@@ -55,7 +55,7 @@ public abstract class Protocol {
 		}
 		return result;
 	}
-	
+
 	/**
 	 * 以小头序读取若干字节的 int
 	 * 
@@ -69,7 +69,7 @@ public abstract class Protocol {
 		}
 		return result;
 	}
-	
+
 	public int readBigedianInt(int length) {
 		int result = 0;
 		for (int i = length - 1; i >= 0; i--) {
@@ -150,7 +150,7 @@ public abstract class Protocol {
 		// 不符合要求的直接抛出异常
 		throw new IOException("Not length encode integer " + firstByte);
 	}
-	
+
 	public String readEOFString() {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		while (buf.hasRemaining()) {
@@ -158,7 +158,7 @@ public abstract class Protocol {
 		}
 		return new String(out.toByteArray());
 	}
-	
+
 	public int[] readBitmap(int count) {
 		int bitmapLength = (count + 7) >> 3;
 		int[] temp = read(bitmapLength);
@@ -173,8 +173,7 @@ public abstract class Protocol {
 		}
 		return bitmap;
 	}
-	
-	
+
 	public int[] readBigedianBitmap(int count) {
 		int bitmapLength = (count + 7) >> 3;
 		int[] temp = read(bitmapLength);

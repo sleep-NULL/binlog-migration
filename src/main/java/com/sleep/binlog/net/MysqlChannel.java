@@ -107,5 +107,5 @@ public class MysqlChannel implements Channel {
 			buf.put((byte) ((value >>> (i << 3)) & 0x000000ff));
 		}
 	}
-	
+
 }

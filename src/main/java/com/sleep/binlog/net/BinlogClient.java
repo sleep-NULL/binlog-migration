@@ -31,8 +31,6 @@ public class BinlogClient implements Runnable {
 
 	private static final Logger logger = LoggerFactory.getLogger(BinlogClient.class);
 
-	// private Selector selector;
-
 	private SocketChannel client;
 
 	private MysqlChannel mysqlChannel;
@@ -42,17 +40,14 @@ public class BinlogClient implements Runnable {
 	private String username;
 
 	private String password;
-	
+
 	private Map<Long, TableMapEvent> tableMap;
 
 	public BinlogClient(String hostname, int port, String username, String password) {
 		try {
-			// selector = Selector.open();
 			client = SocketChannel.open();
-			// client.configureBlocking(false);
 			client.socket().setKeepAlive(true);
 			client.socket().setSoTimeout(1000 * 60);
-			// client.register(selector, SelectionKey.OP_CONNECT);
 			client.connect(new InetSocketAddress(hostname, port));
 			this.mysqlChannel = new MysqlChannel(client);
 			this.username = username;
@@ -132,7 +127,7 @@ public class BinlogClient implements Runnable {
 				UpdateRowsEvent updateRowsEvent = new UpdateRowsEvent(packet, tableMap);
 				logger.info(updateRowsEvent.toString());
 				break;
-			default :
+			default:
 				logger.info("Ignore event.");
 			}
 			break;

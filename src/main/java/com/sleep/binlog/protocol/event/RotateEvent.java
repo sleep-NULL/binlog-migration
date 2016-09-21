@@ -15,7 +15,7 @@ public class RotateEvent extends Protocol {
 	private long position;
 
 	private String nextBinlog;
-	
+
 	public RotateEvent(ByteBuffer buf) {
 		super(buf);
 		this.position = readLong(8);

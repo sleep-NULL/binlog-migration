@@ -1,7 +1,7 @@
 package com.sleep.binlog.util;
 
 public class BitUtil {
-	
+
 	public static byte[] xor(byte[] a, byte[] b) {
 		if (a.length != b.length) {
 			throw new IllegalArgumentException("Input byte arrs length must be equal.");
@@ -12,7 +12,7 @@ public class BitUtil {
 		}
 		return result;
 	}
-	
+
 	/**
 	 * 拼接两个字节数组
 	 * 

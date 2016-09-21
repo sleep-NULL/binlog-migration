@@ -3,11 +3,12 @@ package com.sleep.binlog.protocol;
 /**
  * @author huangyafeng
  *
- * <a href="http://dev.mysql.com/doc/internals/en/com-query-response.html#packet-Protocol::ColumnType">
+ *         <a href=
+ *         "http://dev.mysql.com/doc/internals/en/com-query-response.html#packet-Protocol::ColumnType">
  *
  */
 public interface ColumnType {
-	
+
 	public static final int MYSQL_TYPE_DECIMAL = 0x00;
 	public static final int MYSQL_TYPE_TINY = 0x01;
 	public static final int MYSQL_TYPE_SHORT = 0x02;

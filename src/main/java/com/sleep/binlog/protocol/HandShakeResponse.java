@@ -35,7 +35,7 @@ public class HandShakeResponse extends Response {
 		return BitUtil.xor(DigestUtil.sha1(passwordBytes), DigestUtil
 				.sha1(BitUtil.concat(randomData.getBytes(), DigestUtil.sha1(DigestUtil.sha1(passwordBytes)))));
 	}
-	
+
 	public static void main(String[] args) throws UnsupportedEncodingException, IOException {
 		HandShakeResponse res = new HandShakeResponse(33, "root", "", "");
 		byte[] byteArr = res.calculatedPassword("test", "password");

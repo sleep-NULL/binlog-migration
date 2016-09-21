@@ -6,7 +6,8 @@ import java.nio.ByteBuffer;
 /**
  * @author yafeng.huang
  * 
- * <a href="http://dev.mysql.com/doc/internals/en/packet-OK_Packet.html">
+ *         <a href=
+ *         "http://dev.mysql.com/doc/internals/en/packet-OK_Packet.html">
  *
  */
 public class OkPacket extends Protocol {
