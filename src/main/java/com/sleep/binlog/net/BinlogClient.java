@@ -40,18 +40,24 @@ public class BinlogClient implements Runnable {
 	private String username;
 
 	private String password;
+	
+	private String binlogFilename;
+	
+	private int binlogPos;
 
 	private Map<Long, TableMapEvent> tableMap;
 
-	public BinlogClient(String hostname, int port, String username, String password) {
+	public BinlogClient(String hostname, int port, String username, String password, String binlogFilename, int binlogPos) {
 		try {
 			client = SocketChannel.open();
 			client.socket().setKeepAlive(true);
-			client.socket().setSoTimeout(1000 * 60);
+			client.socket().setSoTimeout(1000 * 10);
 			client.connect(new InetSocketAddress(hostname, port));
 			this.mysqlChannel = new MysqlChannel(client);
 			this.username = username;
 			this.password = password;
+			this.binlogFilename = binlogFilename;
+			this.binlogPos = binlogPos;
 			this.tableMap = new HashMap<Long, TableMapEvent>();
 		} catch (Exception e) {
 			logger.error("Init BinlogClient occured error.");
@@ -66,7 +72,7 @@ public class BinlogClient implements Runnable {
 			authorize();
 			mysqlChannel.sendPachet(new ComQuery("set @master_binlog_checksum='NONE'"), 0);
 			readGenericPacket();
-			mysqlChannel.sendPachet(new ComBinlogDump(4, 0, 2, "mysql-bin.000001"), 0);
+			mysqlChannel.sendPachet(new ComBinlogDump(binlogPos, 0, 2, binlogFilename), 0);
 			int i = 0;
 			while (isRunning.get()) {
 				System.out.println(i++);
