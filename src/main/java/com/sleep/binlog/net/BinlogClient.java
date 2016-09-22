@@ -6,6 +6,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -22,6 +23,7 @@ import com.sleep.binlog.protocol.Packet;
 import com.sleep.binlog.protocol.event.BinlogEventHeader;
 import com.sleep.binlog.protocol.event.DeleteRowsEvent;
 import com.sleep.binlog.protocol.event.EVENT_TYPE;
+import com.sleep.binlog.protocol.event.QueryEvent;
 import com.sleep.binlog.protocol.event.RotateEvent;
 import com.sleep.binlog.protocol.event.TableMapEvent;
 import com.sleep.binlog.protocol.event.UpdateRowsEvent;
@@ -46,6 +48,10 @@ public class BinlogClient implements Runnable {
 	private int binlogPos;
 
 	private Map<Long, TableMapEvent> tableMap;
+	
+	private Map<Long, List<String>> tableColumnName;
+	
+	private Connector connector;
 
 	public BinlogClient(String hostname, int port, String username, String password, String binlogFilename, int binlogPos) {
 		try {
@@ -59,6 +65,8 @@ public class BinlogClient implements Runnable {
 			this.binlogFilename = binlogFilename;
 			this.binlogPos = binlogPos;
 			this.tableMap = new HashMap<Long, TableMapEvent>();
+			this.tableColumnName = new HashMap<Long, List<String>>();
+			this.connector = new Connector(username, password, hostname, port);
 		} catch (Exception e) {
 			logger.error("Init BinlogClient occured error.");
 			throw new NetworkException("Init BinlogClient occured error.", e);
@@ -114,15 +122,21 @@ public class BinlogClient implements Runnable {
 			switch (EVENT_TYPE.valueOf(header.getEventType())) {
 			case ROTATE_EVENT:
 				RotateEvent rotateEvent = new RotateEvent(packet);
+				this.tableColumnName.clear();
 				logger.info(rotateEvent.toString());
+				break;
+			case QUERY_EVENT:
+				QueryEvent queryEvent = new QueryEvent(packet);
+				logger.info(queryEvent.toString());
 				break;
 			case TABLE_MAP_EVENT:
 				TableMapEvent tableMapEvent = new TableMapEvent(packet);
 				tableMap.put(tableMapEvent.getTableId(), tableMapEvent);
+				getTableColumns(tableMapEvent.getTableId(), tableMapEvent.getSchema(), tableMapEvent.getTable());
 				logger.info(tableMapEvent.toString());
 				break;
 			case WRITE_ROWS_EVENTv2:
-				WriteRowsEvent writeRowsEvent = new WriteRowsEvent(packet, tableMap);
+				WriteRowsEvent writeRowsEvent = new WriteRowsEvent(packet, tableMap, tableColumnName);
 				logger.info(writeRowsEvent.toString());
 				break;
 			case DELETE_ROWS_EVENTv2:
@@ -143,5 +157,13 @@ public class BinlogClient implements Runnable {
 			break;
 		}
 	}
-
+	
+	private void getTableColumns(long tableId, String schema, String table) {
+		if (!tableColumnName.containsKey(tableId)) {
+			List<String> rs = connector.getTableColumns(schema, table);
+			System.out.println(rs);
+			this.tableColumnName.put(tableId, connector.getTableColumns(schema, table));
+		}
+	}
+	
 }

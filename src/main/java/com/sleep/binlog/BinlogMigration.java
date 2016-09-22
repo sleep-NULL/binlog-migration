@@ -12,7 +12,7 @@ public class BinlogMigration {
 
 	public static void main(String[] args) {
 		logger.info("BinlogMigration start ...");
-		ThreadUtil.newThread(new BinlogClient("localhost", 3306, "canal", "canal", "mysql-bin.000001", 4), "BinlogClient");
+		ThreadUtil.newThread(new BinlogClient("10.0.30.152", 3306, "canal", "123456", "mysql-bin.000050", 4), "BinlogClient");
 	}
 
 }
