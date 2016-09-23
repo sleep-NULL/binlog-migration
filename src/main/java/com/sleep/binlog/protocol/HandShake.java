@@ -50,9 +50,10 @@ public class HandShake extends Protocol {
 			this.characterSet = readInt(1);
 			this.statusFlags = readInt(2);
 			this.capabilityFlags |= readInt(2) << 16;
-			int authPluginDataLength = 0;
+			// int authPluginDataLength = 0;
 			if ((capabilityFlags & CapabilityFlag.CLIENT_PLUGIN_AUTH) == CapabilityFlag.CLIENT_PLUGIN_AUTH) {
-				authPluginDataLength = readInt(1);
+				// authPluginDataLength = readInt(1);
+				readInt(1);
 			} else {
 				ignore(1);
 			}
