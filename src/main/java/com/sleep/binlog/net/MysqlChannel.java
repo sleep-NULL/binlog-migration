@@ -33,11 +33,16 @@ public class MysqlChannel implements Channel {
 		return value & 0xff;
 	}
 
+	private int readFull(ByteBuffer buf) throws IOException {
+		int i = 0;
+		do {
+			i += socketChannel.read(buf);
+		} while (buf.hasRemaining());
+		return i;
+	}
 
 	public ByteBuffer readPacket() throws IOException {
 		int payloadLength = readPacketLength();
-		socketChannel.read(seq);
-		seq.rewind();
 		ByteBuffer payload = ByteBuffer.allocate(payloadLength);
 		while (payload.hasRemaining()) {
 			socketChannel.read(payload);
@@ -59,13 +64,15 @@ public class MysqlChannel implements Channel {
 	}
 
 	public int readPacketLength() throws IOException {
-		socketChannel.read(packetLength);
+		readFull(packetLength);
 		packetLength.flip();
 		int result = 0;
 		for (int i = 0; i < 3; i++) {
 			result |= (toInt(packetLength.get()) << (i << 3));
 		}
 		packetLength.clear();
+		readFull(seq);
+		seq.rewind();
 		return result;
 	}
 

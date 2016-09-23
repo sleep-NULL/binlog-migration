@@ -24,10 +24,9 @@ public class WriteRowsEvent extends RowsEvent {
 	// =================rows=================
 	private List<Serializable[]> rows;
 
-	public WriteRowsEvent(ByteBuffer buf, Map<Long, TableMapEvent> tableMap, Map<Long, List<String>> tableColumns) throws IOException {
+	public WriteRowsEvent(ByteBuffer buf, Map<Long, TableMapEventAndColumns> tableMap) throws IOException {
 		super(buf);
 		this.tableId = readLong(6);
-		System.out.println(tableColumns.get(tableId));
 		this.flags = readInt(2);
 		this.extraData = readFixedLengthString(readInt(2) - 2);
 		this.columnCount = readLengthEncodedInt();
@@ -40,7 +39,7 @@ public class WriteRowsEvent extends RowsEvent {
 		}
 		this.rows = new LinkedList<Serializable[]>();
 		while (remaining() > 4) {
-			rows.add(deserializeRow(tableMap.get(tableId), bitmap, numOneBitmap));
+			rows.add(deserializeRow(tableMap.get(tableId).getTableMapEvent(), bitmap, numOneBitmap));
 		}
 	}
 

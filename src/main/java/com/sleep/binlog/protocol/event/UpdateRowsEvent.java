@@ -28,7 +28,7 @@ public class UpdateRowsEvent extends RowsEvent {
 
 	private List<Serializable[]> rowsAfter;
 
-	public UpdateRowsEvent(ByteBuffer buf, Map<Long, TableMapEvent> tableMap) throws IOException {
+	public UpdateRowsEvent(ByteBuffer buf, Map<Long, TableMapEventAndColumns> tableMap) throws IOException {
 		super(buf);
 		this.tableId = readLong(6);
 		this.flags = readInt(2);
@@ -52,8 +52,8 @@ public class UpdateRowsEvent extends RowsEvent {
 		this.rowsBefore = new LinkedList<Serializable[]>();
 		this.rowsAfter = new LinkedList<Serializable[]>();
 		while (remaining() > 4) {
-			rowsBefore.add(deserializeRow(tableMap.get(tableId), bitmapBefore, numOneBitmapBefore));
-			rowsAfter.add(deserializeRow(tableMap.get(tableId), bitmapAfter, numOneBitmapAfter));
+			rowsBefore.add(deserializeRow(tableMap.get(tableId).getTableMapEvent(), bitmapBefore, numOneBitmapBefore));
+			rowsAfter.add(deserializeRow(tableMap.get(tableId).getTableMapEvent(), bitmapAfter, numOneBitmapAfter));
 		}
 	}
 

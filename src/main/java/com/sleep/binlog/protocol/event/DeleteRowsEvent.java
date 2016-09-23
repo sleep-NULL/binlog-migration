@@ -24,7 +24,7 @@ public class DeleteRowsEvent extends RowsEvent {
 	// =================rows=================
 	private List<Serializable[]> rows;
 
-	public DeleteRowsEvent(ByteBuffer buf, Map<Long, TableMapEvent> tableMap) throws IOException {
+	public DeleteRowsEvent(ByteBuffer buf, Map<Long, TableMapEventAndColumns> tableMap) throws IOException {
 		super(buf);
 		this.tableId = readLong(6);
 		this.flags = readInt(2);
@@ -39,7 +39,7 @@ public class DeleteRowsEvent extends RowsEvent {
 		}
 		this.rows = new LinkedList<Serializable[]>();
 		while (remaining() > 4) {
-			rows.add(deserializeRow(tableMap.get(tableId), bitmap, numOneBitmap));
+			rows.add(deserializeRow(tableMap.get(tableId).getTableMapEvent(), bitmap, numOneBitmap));
 		}
 	}
 

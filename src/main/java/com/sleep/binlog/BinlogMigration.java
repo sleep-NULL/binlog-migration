@@ -3,7 +3,9 @@ package com.sleep.binlog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.sleep.binlog.listener.EventListener;
 import com.sleep.binlog.net.BinlogClient;
+import com.sleep.binlog.protocol.entry.Entry;
 import com.sleep.binlog.util.ThreadUtil;
 
 public class BinlogMigration {
@@ -12,7 +14,15 @@ public class BinlogMigration {
 
 	public static void main(String[] args) {
 		logger.info("BinlogMigration start ...");
-		ThreadUtil.newThread(new BinlogClient("10.0.30.152", 3306, "canal", "123456", "mysql-bin.000050", 4), "BinlogClient");
+		BinlogClient binlogClient = new BinlogClient("localhost", 3306, "canal", "canal", "mysql-bin.000001", 4);
+		binlogClient.setListener(new EventListener() {
+			@Override
+			public void onEentry(Entry entry) {
+				System.out.println(entry);
+				
+			}
+		});
+		ThreadUtil.newThread(binlogClient, "BinlogClient");
 	}
 
 }

@@ -5,7 +5,6 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.Calendar;
-import java.util.Date;
 
 import com.sleep.binlog.protocol.ColumnType;
 import com.sleep.binlog.protocol.Protocol;
@@ -25,8 +24,7 @@ public abstract class RowsEvent extends Protocol {
 			int bitSetLength = (meta >> 8) * 8 + (meta & 0xFF);
 			return readBitmap(bitSetLength);
 		case ColumnType.MYSQL_TYPE_BLOB:
-			int blobLength = readInt(meta);
-			return read(blobLength);
+			return read(readInt(meta));
 		case ColumnType.MYSQL_TYPE_DATE:
 			int value = readInt(3);
 			int day = value % 32;
@@ -55,9 +53,7 @@ public abstract class RowsEvent extends Protocol {
 		case ColumnType.MYSQL_TYPE_INT24:
 			return (readInt(3) << 8) >> 8;
 		case ColumnType.MYSQL_TYPE_LONG:
-			long lrs = readLong(4);
-			System.out.println(lrs);
-			return lrs;
+			return readLong(4);
 		case ColumnType.MYSQL_TYPE_LONGLONG:
 			return readLong(8);
 		case ColumnType.MYSQL_TYPE_NEWDECIMAL:
@@ -74,9 +70,7 @@ public abstract class RowsEvent extends Protocol {
 			return read(length < 256 ? readInt(1) : readInt(2));
 		case ColumnType.MYSQL_TYPE_VARCHAR:
 		case ColumnType.MYSQL_TYPE_VAR_STRING:
-			byte[] result = readByte(meta < 256 ? readInt(1) : readInt(2));
-			System.out.println(new String(result));
-			return result;
+			return readByte(meta < 256 ? readInt(1) : readInt(2));
 		case ColumnType.MYSQL_TYPE_TIME:
 			int v = readInt(3);
 			int[] sp = split(v, 100, 3);
@@ -88,13 +82,9 @@ public abstract class RowsEvent extends Protocol {
 		case ColumnType.MYSQL_TYPE_TIMESTAMP:
 			return readLong(4) * 1000;
 		case ColumnType.MYSQL_TYPE_TIMESTAMP2:
-			long rs = bigEndianLong(read(4), 0, 4) * 1000 + getFractionalSeconds(meta);
-			System.out.println(new Date(rs));
-			return rs;
+			return bigEndianLong(read(4), 0, 4) * 1000 + getFractionalSeconds(meta);
 		case ColumnType.MYSQL_TYPE_TINY:
-			int ri = readInt(1);
-			System.out.println(ri);
-			return ri;
+			return readInt(1);
 		case ColumnType.MYSQL_TYPE_YEAR:
 			return 1900 + readInt(1);
 		}

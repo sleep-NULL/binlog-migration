@@ -1,10 +1,12 @@
 package com.sleep.binlog.net;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.sleep.binlog.listener.EventListener;
 import com.sleep.binlog.protocol.ComBinlogDump;
 import com.sleep.binlog.protocol.ComQuery;
 import com.sleep.binlog.protocol.ErrPacket;
@@ -20,12 +23,15 @@ import com.sleep.binlog.protocol.HandShake;
 import com.sleep.binlog.protocol.HandShakeResponse;
 import com.sleep.binlog.protocol.OkPacket;
 import com.sleep.binlog.protocol.Packet;
+import com.sleep.binlog.protocol.entry.Column;
+import com.sleep.binlog.protocol.entry.Entry;
 import com.sleep.binlog.protocol.event.BinlogEventHeader;
 import com.sleep.binlog.protocol.event.DeleteRowsEvent;
 import com.sleep.binlog.protocol.event.EVENT_TYPE;
 import com.sleep.binlog.protocol.event.QueryEvent;
 import com.sleep.binlog.protocol.event.RotateEvent;
 import com.sleep.binlog.protocol.event.TableMapEvent;
+import com.sleep.binlog.protocol.event.TableMapEventAndColumns;
 import com.sleep.binlog.protocol.event.UpdateRowsEvent;
 import com.sleep.binlog.protocol.event.WriteRowsEvent;
 
@@ -47,12 +53,12 @@ public class BinlogClient implements Runnable {
 	
 	private int binlogPos;
 
-	private Map<Long, TableMapEvent> tableMap;
-	
-	private Map<Long, List<String>> tableColumnName;
+	private Map<Long, TableMapEventAndColumns> tableMap;
 	
 	private Connector connector;
-
+	
+	private EventListener listener;
+	
 	public BinlogClient(String hostname, int port, String username, String password, String binlogFilename, int binlogPos) {
 		try {
 			client = SocketChannel.open();
@@ -64,8 +70,7 @@ public class BinlogClient implements Runnable {
 			this.password = password;
 			this.binlogFilename = binlogFilename;
 			this.binlogPos = binlogPos;
-			this.tableMap = new HashMap<Long, TableMapEvent>();
-			this.tableColumnName = new HashMap<Long, List<String>>();
+			this.tableMap = new HashMap<Long, TableMapEventAndColumns>();
 			this.connector = new Connector(username, password, hostname, port);
 		} catch (Exception e) {
 			logger.error("Init BinlogClient occured error.");
@@ -81,9 +86,7 @@ public class BinlogClient implements Runnable {
 			mysqlChannel.sendPachet(new ComQuery("set @master_binlog_checksum='NONE'"), 0);
 			readGenericPacket();
 			mysqlChannel.sendPachet(new ComBinlogDump(binlogPos, 0, 2, binlogFilename), 0);
-			int i = 0;
 			while (isRunning.get()) {
-				System.out.println(i++);
 				readBinlogEvent();
 			}
 		} catch (Exception e) {
@@ -122,7 +125,8 @@ public class BinlogClient implements Runnable {
 			switch (EVENT_TYPE.valueOf(header.getEventType())) {
 			case ROTATE_EVENT:
 				RotateEvent rotateEvent = new RotateEvent(packet);
-				this.tableColumnName.clear();
+				this.binlogFilename = rotateEvent.getNextBinlog();
+				this.tableMap.clear();
 				logger.info(rotateEvent.toString());
 				break;
 			case QUERY_EVENT:
@@ -131,20 +135,22 @@ public class BinlogClient implements Runnable {
 				break;
 			case TABLE_MAP_EVENT:
 				TableMapEvent tableMapEvent = new TableMapEvent(packet);
-				tableMap.put(tableMapEvent.getTableId(), tableMapEvent);
-				getTableColumns(tableMapEvent.getTableId(), tableMapEvent.getSchema(), tableMapEvent.getTable());
+				generateTableMapEventAndColumns(tableMapEvent);
 				logger.info(tableMapEvent.toString());
 				break;
 			case WRITE_ROWS_EVENTv2:
-				WriteRowsEvent writeRowsEvent = new WriteRowsEvent(packet, tableMap, tableColumnName);
+				WriteRowsEvent writeRowsEvent = new WriteRowsEvent(packet, tableMap);
+				writeRowToEntry(header, writeRowsEvent);
 				logger.info(writeRowsEvent.toString());
 				break;
 			case DELETE_ROWS_EVENTv2:
 				DeleteRowsEvent deleteRowsEvent = new DeleteRowsEvent(packet, tableMap);
+				deleteRowToEntry(header, deleteRowsEvent);
 				logger.info(deleteRowsEvent.toString());
 				break;
 			case UPDATE_ROWS_EVENTv2:
 				UpdateRowsEvent updateRowsEvent = new UpdateRowsEvent(packet, tableMap);
+				updateRowToEntry(header, updateRowsEvent);
 				logger.info(updateRowsEvent.toString());
 				break;
 			default:
@@ -157,13 +163,93 @@ public class BinlogClient implements Runnable {
 			break;
 		}
 	}
-	
-	private void getTableColumns(long tableId, String schema, String table) {
-		if (!tableColumnName.containsKey(tableId)) {
-			List<String> rs = connector.getTableColumns(schema, table);
-			System.out.println(rs);
-			this.tableColumnName.put(tableId, connector.getTableColumns(schema, table));
+
+	private void writeRowToEntry(BinlogEventHeader header, WriteRowsEvent writeRowsEvent) {
+		TableMapEvent tMap = tableMap.get(writeRowsEvent.getTableId()).getTableMapEvent();
+		List<String> columnName = tableMap.get(writeRowsEvent.getTableId()).getColumns();
+		for (int i = 0, rowsLen = writeRowsEvent.getRows().size(); i < rowsLen; i++) {
+			Entry entry = new Entry();
+			entry.setOffset(header.getLogPos());
+			entry.setBinlog(this.binlogFilename);
+			entry.setSchema(tMap.getSchema());
+			entry.setTable(tMap.getTable());
+			entry.setTimestamp(header.getTimestamp());
+			entry.setType('w');
+			List<Column> columns = new ArrayList<Column>();
+			Serializable[] row = writeRowsEvent.getRows().get(i);
+			for (int j = 0; j < row.length;j++) {
+				Column column = new Column();
+				column.setName(columnName.get(j));
+				column.setValue(row[i].toString());
+				columns.add(column);
+			}
+			entry.setColumns(columns);
+			listener.onEentry(entry);
 		}
+	}
+	
+	private void deleteRowToEntry(BinlogEventHeader header, DeleteRowsEvent event) {
+		TableMapEvent tMap = tableMap.get(event.getTableId()).getTableMapEvent();
+		List<String> columnName = tableMap.get(event.getTableId()).getColumns();
+		for (int i = 0, rowsLen = event.getRows().size(); i < rowsLen; i++) {
+			Entry entry = new Entry();
+			entry.setOffset(header.getLogPos());
+			entry.setBinlog(this.binlogFilename);
+			entry.setSchema(tMap.getSchema());
+			entry.setTable(tMap.getTable());
+			entry.setTimestamp(header.getTimestamp());
+			entry.setType('d');
+			List<Column> columns = new ArrayList<Column>();
+			Serializable[] row = event.getRows().get(i);
+			for (int j = 0; j < row.length;j++) {
+				Column column = new Column();
+				column.setName(columnName.get(j));
+				column.setValue(row[i].toString());
+				columns.add(column);
+			}
+			entry.setColumns(columns);
+			listener.onEentry(entry);
+		}
+	}
+	
+	private void updateRowToEntry(BinlogEventHeader header, UpdateRowsEvent event) {
+		TableMapEvent tMap = tableMap.get(event.getTableId()).getTableMapEvent();
+		List<String> columnName = tableMap.get(event.getTableId()).getColumns();
+		for (int i = 0, rowsLen = event.getRowsAfter().size(); i < rowsLen; i++) {
+			Entry entry = new Entry();
+			entry.setOffset(header.getLogPos());
+			entry.setBinlog(this.binlogFilename);
+			entry.setSchema(tMap.getSchema());
+			entry.setTable(tMap.getTable());
+			entry.setTimestamp(header.getTimestamp());
+			entry.setType('u');
+			List<Column> columns = new ArrayList<Column>();
+			Serializable[] row = event.getRowsAfter().get(i);
+			Serializable[] rowBefore = event.getRowsBefore().get(i);
+			for (int j = 0; j < row.length;j++) {
+				Column column = new Column();
+				column.setName(columnName.get(j));
+				column.setValue(row[j].toString());
+				column.setBeforeValue(rowBefore[j].toString());
+				columns.add(column);
+			}
+			entry.setColumns(columns);
+			listener.onEentry(entry);
+		}
+	}
+	
+	private void generateTableMapEventAndColumns(TableMapEvent tableMapEvent) {
+		long tableId = tableMapEvent.getTableId();
+		if (!tableMap.containsKey(tableId)) {
+			String schema = tableMapEvent.getSchema();
+			String table = tableMapEvent.getTable();
+			List<String> rs = connector.getTableColumns(schema, table);
+			this.tableMap.put(tableId, new TableMapEventAndColumns(tableMapEvent, rs));
+		}
+	}
+
+	public void setListener(EventListener listener) {
+		this.listener = listener;
 	}
 	
 }
