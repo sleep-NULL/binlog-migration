@@ -90,7 +90,7 @@ public class BinlogClient implements Runnable {
 				readBinlogEvent();
 			}
 		} catch (Exception e) {
-			logger.error("", e);
+			logger.error("Binlog client run occur error.", e);
 		}
 	}
 
@@ -151,7 +151,7 @@ public class BinlogClient implements Runnable {
 				updateRowToEntry(header, updateRowsEvent);
 				break;
 			default:
-				logger.info("Ignore event.");
+				// NO OP
 			}
 			break;
 		case Packet.ERR_HEADER:
