@@ -1,7 +1,5 @@
 package com.sleep.binlog.net;
 
-import java.io.ByteArrayInputStream;
-
 import org.junit.Test;
 
 public class MysqlChannelTest {
@@ -16,6 +14,9 @@ public class MysqlChannelTest {
 		System.out.println(b << 3);
 		System.out.println(toLong(a));
 		System.out.println(0xfff);
+		
+		System.out.println(0xff);
+		System.out.println(0xfff & 0xff);
 	}
 
 	private int toInt(byte value) {
@@ -24,16 +25,6 @@ public class MysqlChannelTest {
 
 	private long toLong(byte value) {
 		return (long) toInt(value);
-	}
-
-	public void byteOutputStreamTest() {
-		ByteArrayInputStream in = new ByteArrayInputStream(null);
-		in.read();
-	}
-
-	@Test
-	public void fe() {
-		System.out.println("char = " + (char) 0xfe);
 	}
 
 }

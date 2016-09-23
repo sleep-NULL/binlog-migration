@@ -141,17 +141,14 @@ public class BinlogClient implements Runnable {
 			case WRITE_ROWS_EVENTv2:
 				WriteRowsEvent writeRowsEvent = new WriteRowsEvent(packet, tableMap);
 				writeRowToEntry(header, writeRowsEvent);
-				logger.info(writeRowsEvent.toString());
 				break;
 			case DELETE_ROWS_EVENTv2:
 				DeleteRowsEvent deleteRowsEvent = new DeleteRowsEvent(packet, tableMap);
 				deleteRowToEntry(header, deleteRowsEvent);
-				logger.info(deleteRowsEvent.toString());
 				break;
 			case UPDATE_ROWS_EVENTv2:
 				UpdateRowsEvent updateRowsEvent = new UpdateRowsEvent(packet, tableMap);
 				updateRowToEntry(header, updateRowsEvent);
-				logger.info(updateRowsEvent.toString());
 				break;
 			default:
 				logger.info("Ignore event.");

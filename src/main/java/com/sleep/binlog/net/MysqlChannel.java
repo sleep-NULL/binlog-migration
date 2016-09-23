@@ -7,13 +7,20 @@ import java.nio.channels.SocketChannel;
 
 import com.sleep.binlog.protocol.Response;
 
+/**
+ * SocketChannel 的简单包装
+ * 
+ * @author huangyafeng
+ *
+ */
 public class MysqlChannel implements Channel {
 
 	private SocketChannel socketChannel;
 
-	private ByteBuffer packetLength = ByteBuffer.allocate(3);
-
-	private ByteBuffer seq = ByteBuffer.allocate(1);
+	/**
+	 * 前 3 个字节为 packet 长度, 第 4 字节为 packet sequence 号
+	 */
+	private ByteBuffer packetLengthAndSeq = ByteBuffer.allocate(4);
 
 	public MysqlChannel(SocketChannel socketChannel) {
 		this.socketChannel = socketChannel;
@@ -44,47 +51,37 @@ public class MysqlChannel implements Channel {
 	public ByteBuffer readPacket() throws IOException {
 		int payloadLength = readPacketLength();
 		ByteBuffer payload = ByteBuffer.allocate(payloadLength);
-		while (payload.hasRemaining()) {
-			socketChannel.read(payload);
-		}
+		readFull(payload);
 		payload.flip();
 		return payload;
 	}
 
 	public void sendPachet(Response res, int seq) throws IOException {
 		byte[] resBytes = res.toByteArray();
-		ByteBuffer resByteBuffer = ByteBuffer.allocate(4 + resBytes.length);
-		writeInt(resBytes.length, 3, resByteBuffer);
-		writeInt(seq, 1, resByteBuffer);
-		resByteBuffer.put(resBytes);
-		resByteBuffer.flip();
-		while (resByteBuffer.hasRemaining()) {
-			socketChannel.write(resByteBuffer);
-		}
+		ByteBuffer buf = ByteBuffer.allocate(4 + resBytes.length);
+		writeInt(resBytes.length, 3, buf);
+		writeInt(seq, 1, buf);
+		buf.put(resBytes);
+		buf.flip();
+		do {
+			socketChannel.write(buf);
+		} while (buf.hasRemaining());
 	}
 
 	public int readPacketLength() throws IOException {
-		readFull(packetLength);
-		packetLength.flip();
+		readFull(packetLengthAndSeq);
+		packetLengthAndSeq.flip();
 		int result = 0;
 		for (int i = 0; i < 3; i++) {
-			result |= (toInt(packetLength.get()) << (i << 3));
+			result |= (toInt(packetLengthAndSeq.get()) << (i << 3));
 		}
-		packetLength.clear();
-		readFull(seq);
-		seq.rewind();
+		packetLengthAndSeq.clear();
 		return result;
 	}
 
-	/**
-	 * 小头序写 int
-	 * 
-	 * @param value
-	 * @param length
-	 */
 	private void writeInt(int value, int length, ByteBuffer buf) {
 		for (int i = 0; i < length; i++) {
-			buf.put((byte) ((value >>> (i << 3)) & 0x000000ff));
+			buf.put((byte) ((value >>> (i << 3)) & 0xff));
 		}
 	}
 
