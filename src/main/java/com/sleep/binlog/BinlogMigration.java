@@ -18,7 +18,6 @@ public class BinlogMigration {
 			@Override
 			public void onEentry(Entry entry) {
 				System.out.println(entry);
-				
 			}
 		});
 		binlogClient.start();

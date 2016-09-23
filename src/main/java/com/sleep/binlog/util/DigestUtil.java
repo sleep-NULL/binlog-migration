@@ -24,8 +24,4 @@ public class DigestUtil {
 		return sha1.digest(message);
 	}
 
-	public static void main(String[] args) {
-		System.out.println(sha1("cadsfa".getBytes()));
-	}
-
 }
