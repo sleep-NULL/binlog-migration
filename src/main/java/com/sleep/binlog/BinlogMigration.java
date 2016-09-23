@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 import com.sleep.binlog.listener.EventListener;
 import com.sleep.binlog.net.BinlogClient;
 import com.sleep.binlog.protocol.entry.Entry;
-import com.sleep.binlog.util.ThreadUtil;
 
 public class BinlogMigration {
 
@@ -22,7 +21,8 @@ public class BinlogMigration {
 				
 			}
 		});
-		ThreadUtil.newThread(binlogClient, "BinlogClient");
+		binlogClient.start();
+		logger.info("BinlogMigration start ok.");
 	}
 
 }

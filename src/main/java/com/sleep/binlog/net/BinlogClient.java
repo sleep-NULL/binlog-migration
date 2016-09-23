@@ -34,8 +34,9 @@ import com.sleep.binlog.protocol.event.TableMapEvent;
 import com.sleep.binlog.protocol.event.TableMapEventAndColumns;
 import com.sleep.binlog.protocol.event.UpdateRowsEvent;
 import com.sleep.binlog.protocol.event.WriteRowsEvent;
+import com.sleep.binlog.util.ThreadUtil;
 
-public class BinlogClient implements Runnable {
+public class BinlogClient {
 
 	private static final Logger logger = LoggerFactory.getLogger(BinlogClient.class);
 
@@ -78,20 +79,24 @@ public class BinlogClient implements Runnable {
 		}
 	}
 
-	@Override
-	public void run() {
+	public void start() {
 		isRunning.set(true);
-		try {
-			authorize();
-			mysqlChannel.sendPachet(new ComQuery("set @master_binlog_checksum='NONE'"), 0);
-			readGenericPacket();
-			mysqlChannel.sendPachet(new ComBinlogDump(binlogPos, 0, 2, binlogFilename), 0);
-			while (isRunning.get()) {
-				readBinlogEvent();
+		ThreadUtil.newThread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					authorize();
+					mysqlChannel.sendPachet(new ComQuery("set @master_binlog_checksum='NONE'"), 0);
+					readGenericPacket();
+					mysqlChannel.sendPachet(new ComBinlogDump(binlogPos, 0, 2, binlogFilename), 0);
+					while (isRunning.get()) {
+						readBinlogEvent();
+					}
+				} catch (Exception e) {
+					logger.error("Binlog client run occur error.", e);
+				}
 			}
-		} catch (Exception e) {
-			logger.error("Binlog client run occur error.", e);
-		}
+		}, "BinlogClient");
 	}
 
 	private void authorize() throws IOException, UnsupportedEncodingException {
