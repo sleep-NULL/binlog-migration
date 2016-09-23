@@ -67,10 +67,10 @@ public abstract class RowsEvent extends Protocol {
 		case ColumnType.MYSQL_TYPE_SHORT:
 			return readInt(2);
 		case ColumnType.MYSQL_TYPE_STRING:
-			return read(length < 256 ? readInt(1) : readInt(2));
+			return new String(readByte(length < 256 ? readInt(1) : readInt(2)));
 		case ColumnType.MYSQL_TYPE_VARCHAR:
 		case ColumnType.MYSQL_TYPE_VAR_STRING:
-			return readByte(meta < 256 ? readInt(1) : readInt(2));
+			return new String(readByte(meta < 256 ? readInt(1) : readInt(2)));
 		case ColumnType.MYSQL_TYPE_TIME:
 			int v = readInt(3);
 			int[] sp = split(v, 100, 3);
