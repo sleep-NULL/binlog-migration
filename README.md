@@ -16,7 +16,7 @@ character_set_server=utf8
 
 # Example
 ```java
-BinlogClient binlogClient = new BinlogClient("10.0.30.152", 3306, "canal", "123456", 2, "mysql-bin.000001", 4);
+BinlogClient binlogClient = new BinlogClient("localhost", 3306, "canal", "canal", 2, "mysql-bin.000001", 4);
 binlogClient.setListener(new EventListener() {
 	@Override
 	public void onEentry(Entry entry) {
