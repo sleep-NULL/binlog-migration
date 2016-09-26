@@ -3,11 +3,11 @@ package com.sleep.binlog.protocol;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-public abstract class Response {
+public abstract class Output {
 
 	private ByteArrayOutputStream out;
 
-	public Response() {
+	public Output() {
 		out = new ByteArrayOutputStream();
 	}
 

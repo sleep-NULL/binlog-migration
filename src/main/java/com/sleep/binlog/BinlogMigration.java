@@ -13,7 +13,7 @@ public class BinlogMigration {
 
 	public static void main(String[] args) {
 		logger.info("BinlogMigration start ...");
-		BinlogClient binlogClient = new BinlogClient("localhost", 3306, "canal", "canal", "mysql-bin.000001", 4);
+		BinlogClient binlogClient = new BinlogClient("localhost", 3306, "canal", "canal", 2, "mysql-bin.000001", 4);
 		binlogClient.setListener(new EventListener() {
 			@Override
 			public void onEentry(Entry entry) {

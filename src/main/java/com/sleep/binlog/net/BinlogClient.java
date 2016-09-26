@@ -20,7 +20,7 @@ import com.sleep.binlog.protocol.ComBinlogDump;
 import com.sleep.binlog.protocol.ComQuery;
 import com.sleep.binlog.protocol.ErrPacket;
 import com.sleep.binlog.protocol.HandShake;
-import com.sleep.binlog.protocol.HandShakeResponse;
+import com.sleep.binlog.protocol.HandShakeOutput;
 import com.sleep.binlog.protocol.OkPacket;
 import com.sleep.binlog.protocol.Packet;
 import com.sleep.binlog.protocol.entry.Column;
@@ -34,6 +34,7 @@ import com.sleep.binlog.protocol.event.TableMapEvent;
 import com.sleep.binlog.protocol.event.TableMapEventAndColumns;
 import com.sleep.binlog.protocol.event.UpdateRowsEvent;
 import com.sleep.binlog.protocol.event.WriteRowsEvent;
+import com.sleep.binlog.util.StringUtil;
 import com.sleep.binlog.util.ThreadUtil;
 
 public class BinlogClient {
@@ -44,15 +45,17 @@ public class BinlogClient {
 
 	private MysqlChannel mysqlChannel;
 
-	private AtomicBoolean isRunning = new AtomicBoolean(false);
+	private AtomicBoolean isRunning = new AtomicBoolean(true);
 
 	private String username;
 
 	private String password;
 	
+	private int serverId;
+	
 	private String binlogFilename;
 	
-	private int binlogPos;
+	private long binlogPos;
 
 	private Map<Long, TableMapEventAndColumns> tableMap;
 	
@@ -60,7 +63,7 @@ public class BinlogClient {
 	
 	private EventListener listener;
 	
-	public BinlogClient(String hostname, int port, String username, String password, String binlogFilename, int binlogPos) {
+	public BinlogClient(String hostname, int port, String username, String password, int serverId, String binlogFilename, long binlogPos) {
 		try {
 			client = SocketChannel.open();
 			client.socket().setKeepAlive(true);
@@ -69,6 +72,7 @@ public class BinlogClient {
 			this.mysqlChannel = new MysqlChannel(client);
 			this.username = username;
 			this.password = password;
+			this.serverId = serverId;
 			this.binlogFilename = binlogFilename;
 			this.binlogPos = binlogPos;
 			this.tableMap = new HashMap<Long, TableMapEventAndColumns>();
@@ -80,7 +84,6 @@ public class BinlogClient {
 	}
 
 	public void start() {
-		isRunning.set(true);
 		ThreadUtil.newThread(new Runnable() {
 			@Override
 			public void run() {
@@ -88,7 +91,7 @@ public class BinlogClient {
 					authorize();
 					mysqlChannel.sendPachet(new ComQuery("set @master_binlog_checksum='NONE'"), 0);
 					readGenericPacket();
-					mysqlChannel.sendPachet(new ComBinlogDump(binlogPos, 0, 2, binlogFilename), 0);
+					mysqlChannel.sendPachet(new ComBinlogDump(binlogPos, 0, serverId, binlogFilename), 0);
 					while (isRunning.get()) {
 						readBinlogEvent();
 					}
@@ -102,7 +105,7 @@ public class BinlogClient {
 	private void authorize() throws IOException, UnsupportedEncodingException {
 		HandShake handshake = new HandShake(mysqlChannel.readPacket());
 		logger.info(handshake.toString());
-		HandShakeResponse res = new HandShakeResponse(handshake.getCharacterSet(), username, password,
+		HandShakeOutput res = new HandShakeOutput(handshake.getCharacterSet(), username, password,
 				handshake.getAuthPluginDataPart1() + handshake.getAuthPluginDataPart2());
 		mysqlChannel.sendPachet(res, 1);
 		readGenericPacket();
@@ -126,6 +129,7 @@ public class BinlogClient {
 		switch (packet.get() & 0xff) {
 		case Packet.OK_HEADER:
 			BinlogEventHeader header = new BinlogEventHeader(packet);
+			this.binlogPos = header.getLogPos();
 			logger.info(header.toString());
 			switch (EVENT_TYPE.valueOf(header.getEventType())) {
 			case ROTATE_EVENT:
@@ -182,7 +186,7 @@ public class BinlogClient {
 			for (int j = 0; j < row.length;j++) {
 				Column column = new Column();
 				column.setName(columnName.get(j));
-				column.setValue(row[i].toString());
+				column.setValue(StringUtil.toString(row[j]));
 				columns.add(column);
 			}
 			entry.setColumns(columns);
@@ -206,7 +210,7 @@ public class BinlogClient {
 			for (int j = 0; j < row.length;j++) {
 				Column column = new Column();
 				column.setName(columnName.get(j));
-				column.setValue(row[i].toString());
+				column.setValue(StringUtil.toString(row[j]));
 				columns.add(column);
 			}
 			entry.setColumns(columns);
@@ -231,8 +235,8 @@ public class BinlogClient {
 			for (int j = 0; j < row.length;j++) {
 				Column column = new Column();
 				column.setName(columnName.get(j));
-				column.setValue(row[j].toString());
-				column.setBeforeValue(rowBefore[j].toString());
+				column.setValue(StringUtil.toString(row[j]));
+				column.setBeforeValue(StringUtil.toString(rowBefore[j]));
 				columns.add(column);
 			}
 			entry.setColumns(columns);

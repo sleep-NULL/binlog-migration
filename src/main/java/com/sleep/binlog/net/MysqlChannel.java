@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.SocketChannel;
 
-import com.sleep.binlog.protocol.Response;
+import com.sleep.binlog.protocol.Output;
 
 /**
  * SocketChannel 的简单包装
@@ -56,7 +56,7 @@ public class MysqlChannel implements Channel {
 		return payload;
 	}
 
-	public void sendPachet(Response res, int seq) throws IOException {
+	public void sendPachet(Output res, int seq) throws IOException {
 		byte[] resBytes = res.toByteArray();
 		ByteBuffer buf = ByteBuffer.allocate(4 + resBytes.length);
 		writeInt(resBytes.length, 3, buf);
@@ -68,7 +68,7 @@ public class MysqlChannel implements Channel {
 		} while (buf.hasRemaining());
 	}
 
-	public int readPacketLength() throws IOException {
+	private int readPacketLength() throws IOException {
 		readFull(packetLengthAndSeq);
 		packetLengthAndSeq.flip();
 		int result = 0;

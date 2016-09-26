@@ -8,11 +8,11 @@ import java.io.IOException;
  *         <a href="http://dev.mysql.com/doc/internals/en/com-binlog-dump.html">
  *
  */
-public class ComBinlogDump extends Response {
+public class ComBinlogDump extends Output {
 
 	private static final int commandId = 0x12;
 
-	public ComBinlogDump(int binlogPos, int flags, int serverId, String binlogFilename) throws IOException {
+	public ComBinlogDump(long binlogPos, int flags, int serverId, String binlogFilename) throws IOException {
 		super();
 		writeInt(commandId, 1);
 		writeLong(binlogPos, 4);

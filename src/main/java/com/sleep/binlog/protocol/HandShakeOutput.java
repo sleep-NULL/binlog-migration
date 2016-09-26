@@ -6,9 +6,9 @@ import java.io.UnsupportedEncodingException;
 import com.sleep.binlog.util.BitUtil;
 import com.sleep.binlog.util.DigestUtil;
 
-public class HandShakeResponse extends Response {
+public class HandShakeOutput extends Output {
 
-	public HandShakeResponse(int charset, String username, String password, String randomData)
+	public HandShakeOutput(int charset, String username, String password, String randomData)
 			throws UnsupportedEncodingException, IOException {
 		super();
 		writeInt(CapabilityFlag.CLIENT_PROTOCOL_41 | CapabilityFlag.CLIENT_LONG_FLAG
@@ -37,7 +37,7 @@ public class HandShakeResponse extends Response {
 	}
 
 	public static void main(String[] args) throws UnsupportedEncodingException, IOException {
-		HandShakeResponse res = new HandShakeResponse(33, "root", "", "");
+		HandShakeOutput res = new HandShakeOutput(33, "root", "", "");
 		byte[] byteArr = res.calculatedPassword("test", "password");
 		for (int i = 0; i < byteArr.length; i++) {
 			System.out.print(byteArr[i]);

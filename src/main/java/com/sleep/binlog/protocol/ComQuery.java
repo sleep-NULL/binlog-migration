@@ -8,7 +8,7 @@ import java.io.IOException;
  *         <a href="http://dev.mysql.com/doc/internals/en/com-query.html">
  *
  */
-public class ComQuery extends Response {
+public class ComQuery extends Output {
 
 	private int commandId = 0x03;
 
