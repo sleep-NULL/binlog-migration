@@ -1,4 +1,4 @@
-package com.sleep.binlog.net;
+package com.sleep.binlog;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -16,6 +16,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.sleep.binlog.listener.EventListener;
+import com.sleep.binlog.net.Connector;
+import com.sleep.binlog.net.MysqlChannel;
+import com.sleep.binlog.net.NetworkException;
 import com.sleep.binlog.protocol.ComBinlogDump;
 import com.sleep.binlog.protocol.ComQuery;
 import com.sleep.binlog.protocol.ErrPacket;

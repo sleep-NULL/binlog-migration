@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.sleep.binlog.listener.EventListener;
-import com.sleep.binlog.net.BinlogClient;
 import com.sleep.binlog.protocol.entry.Entry;
 
 public class BinlogMigration {
